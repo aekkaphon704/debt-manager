@@ -17,12 +17,11 @@ st.title("📄 ระบบจัดการข้อมูลลูกหน�
 # ----------------------------
 st.header("[1] กรอกข้อมูลการชำระ")
 
-with st.form("payment_form"):
-    customer_name = st.selectbox("ชื่อลูกค้า", options=customers_df["NAME"].tolist())
-    payment_date = st.date_input("วันที่ชำระ", value=datetime.today())
-    amount_paid = st.number_input("จำนวนเงินที่จ่าย", min_value=0.0, step=100.0)
-    note = st.text_input("หมายเหตุ (ถ้ามี)", "")
-    submit_btn = st.form_submit_button("💾 บันทึกข้อมูลและพิมพ์ใบเสร็จ")
+customer_name = st.selectbox("ชื่อลูกค้า", options=customers_df["NAME"].tolist())
+payment_date = st.date_input("วันที่ชำระ", value=datetime.today())
+amount_paid = st.number_input("จำนวนเงินที่จ่าย", min_value=0.0, step=100.0)
+note = st.text_input("หมายเหตุ (ถ้ามี)", "")
+submit_btn = st.button("💾 บันทึกข้อมูลและพิมพ์ใบเสร็จ")
 
 # ----------------------------
 # บันทึกข้อมูลลง Excel
@@ -71,7 +70,7 @@ if customer_name:
     st.markdown(f"<div style='color:#FFFFFF; font-size:20px;'>ยอดคงเหลือปีนี้:&nbsp;&nbsp;&nbsp;&nbsp;{remaining:,.2f} บาท</div>", unsafe_allow_html=True)
     st.markdown(f"<div style='color:#FFFFFF; font-size:20px;'>ค่าปรับ (ถ้ามี):&nbsp;&nbsp;&nbsp;&nbsp;{penalty:,.2f} บาท</div>", unsafe_allow_html=True)
 
-        # คำนวณยอดชำระรวม 4 ปี และยอดหนี้คงเหลือรวม 4 ปี
+    # คำนวณยอดชำระรวม 4 ปี และยอดหนี้คงเหลือรวม 4 ปี
     start_4_years_ago = date(current_fiscal - 3, 4, 5)
     end_this_year = date(current_fiscal + 1, 3, 5)
 
@@ -84,8 +83,7 @@ if customer_name:
     total_remaining_4_years = total_due - paid_4_years
 
     st.markdown(f"<div style='color:#FFFFFF; font-size:20px;'>ยอดหนี้คงเหลือรวม 4 ปี:&nbsp;&nbsp;&nbsp;&nbsp;{total_remaining_4_years:,.2f} บาท</div>", unsafe_allow_html=True)
-
-      # ----------------------------
+  # ----------------------------
     # สร้างใบเสร็จ PDF (A4)
     # ----------------------------
     if submit_btn:
@@ -153,8 +151,7 @@ if customer_name:
 
         with open(receipt_name, "rb") as f:
             st.download_button("📥 ดาวน์โหลดใบเสร็จ (PDF)", f, file_name=receipt_name)
-
-    # ----------------------------
+       # ----------------------------
     # ตารางสรุปยอดย้อนหลัง 4 ปี
     # ----------------------------
     st.header("[2] สรุปยอดย้อนหลัง 4 ปี")
@@ -182,7 +179,11 @@ if customer_name:
         "ยอดที่จ่ายแล้ว": "{:,.2f}",
         "ยอดคงเหลือ": "{:,.2f}"
     }))
-    st.header("[3] สรุปรายปี + ค่าปรับ (รายบุคคล)")
+
+# ----------------------------
+# รายงานสรุปรายปี (ใช้ customer_name ที่เลือกไว้)
+# ----------------------------
+st.header("[3] สรุปรายปี + ค่าปรับ (รายบุคคล)")
 
 fiscal_ranges = {
     "2025-2026": (date(2025, 4, 5), date(2026, 3, 5)),
@@ -192,18 +193,18 @@ fiscal_ranges = {
 }
 
 selected_range = st.selectbox("เลือกช่วงปีงบประมาณ", list(fiscal_ranges.keys()))
-start_date, end_date = fiscal_ranges[selected_range]
-st.subheader(f"รายงาน: {selected_range} ({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})")
+start_range, end_range = fiscal_ranges[selected_range]
+st.subheader(f"รายงาน: {selected_range} ({start_range.strftime('%d/%m/%Y')} - {end_range.strftime('%d/%m/%Y')})")
 
-if datetime.today().date() < end_date:
+if datetime.today().date() < end_range:
     st.info("📌 ยังไม่ถึงกำหนดสิ้นปี จึงไม่มีข้อมูลค่าปรับ")
 else:
     total_debt = customer_amounts[customer_name]
     required_yearly = total_debt / 4
 
     paid = payments_df[(payments_df["ชื่อลูกค้า"] == customer_name) &
-        (pd.to_datetime(payments_df["วันที่จ่าย"]).dt.date >= start_date) &
-        (pd.to_datetime(payments_df["วันที่จ่าย"]).dt.date <= end_date)]["จำนวนเงิน"].sum()
+        (pd.to_datetime(payments_df["วันที่จ่าย"]).dt.date >= start_range) &
+        (pd.to_datetime(payments_df["วันที่จ่าย"]).dt.date <= end_range)]["จำนวนเงิน"].sum()
 
     shortage = max(0, required_yearly - paid)
     penalty = shortage * 0.15
